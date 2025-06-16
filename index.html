@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天氣整合系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 登入頁面 */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #5a67d8;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        /* 主頁面 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* 導航標籤 */
+        .nav-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 20px;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 15px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        /* 內容區域 */
+        .content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .content-header {
+            padding: 15px 20px;
+            background: rgba(102, 126, 234, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .iframe-container {
+            height: 500px;
+            position: relative;
+        }
+
+        .weather-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #666;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e1e5e9;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .location-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .location-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+
+        .location-btn:hover {
+            background: #5a67d8;
+        }
+
+        .location-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .nav-tab {
+                flex: none;
+            }
+            
+            .iframe-container {
+                height: 400px;
+            }
+        }
+
+        /* 通知 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- 登入頁面 -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <h1 class="login-title">🌤️ 天氣整合系統</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username" class="form-label">使用者名稱</label>
+                    <input type="text" id="username" class="form-input" placeholder="請輸入使用者名稱" required>
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">密碼</label>
+                    <input type="password" id="password" class="form-input" placeholder="請輸入密碼" required>
+                </div>
+                <button type="submit" class="login-btn">登入系統</button>
+                <div id="errorMessage" class="error-message hidden"></div>
+            </form>
+            <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                測試帳號：admin / 密碼：123456
+            </div>
+        </div>
+    </div>
+
+    <!-- 主頁面 -->
+    <div id="mainPage" class="container hidden">
+        <header class="header">
+            <div class="logo">🌤️ 天氣整合系統</div>
+            <div class="header-info">
+                <span id="currentTime"></span>
+                <span>👤 <span id="currentUser">admin</span></span>
+                <button id="logoutBtn" class="btn btn-secondary">登出</button>
+            </div>
+        </header>
+
+        <!-- 導航標籤 -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="satellite">🛰️ 衛星雲圖</button>
+            <button class="nav-tab" data-tab="radar">📡 雷達回波</button>
+            <button class="nav-tab" data-tab="rainfall">🌧️ 即時降雨預警</button>
+            <button class="nav-tab" data-tab="rainhelper">☔ 落雨小幫手</button>
+            <button class="nav-tab" data-tab="qpe">📊 定量降雨估計</button>
+            <button class="nav-tab" data-tab="radarwarning">⚠️ 雷達回波示警</button>
+            <button class="nav-tab" data-tab="radarda">🔄 雷達資料同化</button>
+            <button class="nav-tab" data-tab="防災雷達">⭐ 防災降雨雷達</button>
+        </div>
+
+        <!-- 內容區域 -->
+        <div class="content">
+            <div class="content-header">
+                <div class="content-title" id="contentTitle">衛星雲圖</div>
+                <button class="btn btn-secondary" id="refreshBtn">🔄 重新整理</button>
+            </div>
+            <div class="iframe-container">
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    載入中...
+                </div>
+                <iframe id="weatherFrame" class="weather-iframe hidden" title="天氣資訊"></iframe>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <span style="color: #27ae60;">●</span>
+                <span>系統運行正常</span>
+            </div>
+            <div class="location-info">
+                <span>📍</span>
+                <span id="locationText">正在取得位置...</span>
+                <button id="updateLocationBtn" class="location-btn">更新位置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 應用程式狀態
+        const app = {
+            currentUser: null,
+            currentTab: 'satellite',
+            userLocation: null,
+            weatherSources: {
+                satellite: {
+                    title: '衛星雲圖',
+                    url: 'https://www.cwa.gov.tw/V8/C/W/OBS_Sat.html?Area=1'
+                },
+                radar: {
+                    title: '雷達回波',
+                    url: 'https://www.cwa.gov.tw/V8/C/W/OBS_Radar.html'
+                },
+                rainfall: {
+                    title: '即時降雨預警',
+                    url: 'https://watch.ncdr.nat.gov.tw/watch_nowcast'
+                },
+                rainhelper: {
+                    title: '落雨小幫手',
+                    url: 'https://watch.ncdr.nat.gov.tw/watch_app',
+                    needLocation: true
+                },
+                qpe: {
+                    title: '定量降雨估計',
+                    url: 'https://watch.ncdr.nat.gov.tw/watch_kridmap'
+                },
+                radarwarning: {
+                    title: '雷達回波示警',
+                    url: 'https://watch.ncdr.nat.gov.tw/watch_radarwarning'
+                },
+                radarda: {
+                    title: '雷達資料同化',
+                    url: 'https://watch.ncdr.nat.gov.tw/watch_radarda_fst'
+                },
+                防災雷達: {
+                    title: '防災降雨雷達',
+                    url: 'https://watch.ncdr.nat.gov.tw/watch_qpeqpn'
+                }
+            }
+        };
+
+        // DOM 元素
+        const elements = {
+            loginPage: document.getElementById('loginPage'),
+            mainPage: document.getElementById('mainPage'),
+            loginForm: document.getElementById('loginForm'),
+            errorMessage: document.getElementById('errorMessage'),
+            navTabs: document.querySelectorAll('.nav-tab'),
+            contentTitle: document.getElementById('contentTitle'),
+            weatherFrame: document.getElementById('weatherFrame'),
+            loading: document.getElementById('loading'),
+            refreshBtn: document.getElementById('refreshBtn'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            currentTime: document.getElementById('currentTime'),
+            currentUser: document.getElementById('currentUser'),
+            locationText: document.getElementById('locationText'),
+            updateLocationBtn: document.getElementById('updateLocationBtn')
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            bindEvents();
+            updateTime();
+            setInterval(updateTime, 1000);
+            getUserLocation(); // 初始化時取得位置
+        });
+
+        // 綁定事件
+        function bindEvents() {
+            // 登入
+            elements.loginForm.addEventListener('submit', handleLogin);
+            
+            // 導航標籤
+            elements.navTabs.forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+            
+            // 按鈕
+            elements.refreshBtn.addEventListener('click', refreshWeather);
+            elements.logoutBtn.addEventListener('click', handleLogout);
+            elements.updateLocationBtn.addEventListener('click', getUserLocation);
+            
+            // iframe 載入
+            elements.weatherFrame.addEventListener('load', hideLoading);
+        }
+
+        // 登入處理
+        function handleLogin(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (username === 'admin' && password === '123456') {
+                app.currentUser = { username, loginTime: new Date() };
+                elements.errorMessage.classList.add('hidden');
+                showMainPage();
+                showNotification('登入成功！');
+            } else {
+                elements.errorMessage.textContent = '使用者名稱或密碼錯誤';
+                elements.errorMessage.classList.remove('hidden');
+            }
+        }
+
+        // 顯示主頁面
+        function showMainPage() {
+            elements.loginPage.classList.add('hidden');
+            elements.mainPage.classList.remove('hidden');
+            elements.currentUser.textContent = app.currentUser.username;
+            loadWeatherContent();
+        }
+
+        // 切換標籤
+        function switchTab(tabName) {
+            elements.navTabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+            
+            app.currentTab = tabName;
+            loadWeatherContent();
+        }
+
+        // 載入天氣內容
+        function loadWeatherContent() {
+            const source = app.weatherSources[app.currentTab];
+            
+            // 如果是落雨小幫手且需要位置資訊
+            if (source.needLocation && !app.userLocation) {
+                elements.contentTitle.textContent = source.title + ' (需要位置資訊)';
+                elements.loading.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="margin-bottom: 15px;">📍 需要您的位置資訊才能使用落雨小幫手</div>
+                        <button onclick="getUserLocation()" class="btn btn-primary">取得位置</button>
+                    </div>
+                `;
+                elements.loading.classList.remove('hidden');
+                elements.weatherFrame.classList.add('hidden');
+                return;
+            }
+            
+            elements.contentTitle.textContent = source.title;
+            elements.loading.innerHTML = '<div class="spinner"></div>載入中...';
+            elements.loading.classList.remove('hidden');
+            elements.weatherFrame.classList.add('hidden');
+            
+            // 如果有位置資訊且是落雨小幫手，可以在URL中加入位置參數
+            let url = source.url;
+            if (source.needLocation && app.userLocation) {
+                // 這裡可以根據實際API需求調整URL參數
+                // url += `?lat=${app.userLocation.lat}&lng=${app.userLocation.lng}`;
+            }
+            
+            elements.weatherFrame.src = url;
+        }
+
+        // 隱藏載入畫面
+        function hideLoading() {
+            setTimeout(() => {
+                elements.loading.classList.add('hidden');
+                elements.weatherFrame.classList.remove('hidden');
+            }, 500);
+        }
+
+        // 重新整理
+        function refreshWeather() {
+            loadWeatherContent();
+            showNotification('正在重新整理...');
+        }
+
+        // 更新時間
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-TW', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            elements.currentTime.textContent = timeString;
+        }
+
+        // 取得用戶位置
+        function getUserLocation() {
+            if (!navigator.geolocation) {
+                elements.locationText.textContent = '瀏覽器不支援定位';
+                showNotification('您的瀏覽器不支援定位功能');
+                return;
+            }
+
+            elements.locationText.textContent = '正在取得位置...';
+            elements.updateLocationBtn.disabled = true;
+            elements.updateLocationBtn.textContent = '取得中...';
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    app.userLocation = { lat, lng };
+                    
+                    // 使用反向地理編碼取得地址（簡化版）
+                    getLocationName(lat, lng);
+                    
+                    elements.updateLocationBtn.disabled = false;
+                    elements.updateLocationBtn.textContent = '更新位置';
+                    
+                    showNotification('位置更新成功！');
+                    
+                    // 如果當前是落雨小幫手頁面，重新載入
+                    if (app.currentTab === 'rainhelper') {
+                        loadWeatherContent();
+                    }
+                },
+                function(error) {
+                    let errorMsg = '無法取得位置';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = '位置存取被拒絕';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = '位置資訊無法取得';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = '位置請求逾時';
+                            break;
+                    }
+                    
+                    elements.locationText.textContent = errorMsg;
+                    elements.updateLocationBtn.disabled = false;
+                    elements.updateLocationBtn.textContent = '重試';
+                    showNotification(errorMsg);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000 // 5分鐘快取
+                }
+            );
+        }
+
+        // 取得位置名稱（簡化版）
+        function getLocationName(lat, lng) {
+            // 簡單的台灣地區判斷
+            if (lat >= 22 && lat <= 25.5 && lng >= 120 && lng <= 122) {
+                // 根據經緯度大致判斷區域
+                let area = '台灣';
+                if (lat >= 24.5) area = '台北地區';
+                else if (lat >= 24) area = '台中地區';
+                else if (lat >= 23) area = '台南地區';
+                else area = '高雄地區';
+                
+                elements.locationText.textContent = `${area} (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+            } else {
+                elements.locationText.textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            }
+        }
+
+        // 顯示通知
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 10);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        // 登出
+        function handleLogout() {
+            if (confirm('確定要登出嗎？')) {
+                app.currentUser = null;
+                elements.loginPage.classList.remove('hidden');
+                elements.mainPage.classList.add('hidden');
+                
+                // 重置表單
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                elements.errorMessage.classList.add('hidden');
+                
+                showNotification('已成功登出');
+            }
+        }
+    </script>
+</body>
+</html>
